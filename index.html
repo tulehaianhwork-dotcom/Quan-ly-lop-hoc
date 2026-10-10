@@ -244,28 +244,46 @@
 
             <!-- Settings View -->
             <div id="view-settings" class="hidden fade-in max-w-3xl mx-auto">
-                <h3 class="text-lg font-bold text-gray-800 mb-6">Cài đặt & Đồng bộ Cloud</h3>
+                <h3 class="text-lg font-bold text-gray-800 mb-6">Cài đặt & Sao lưu dữ liệu</h3>
                 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-                    <div class="flex items-start gap-4 mb-6">
-                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-cloud text-blue-600 text-xl"></i>
+                    
+                    <!-- Phần Copy Mã -->
+                    <div class="flex items-start gap-4 mb-8">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-file-export text-green-600 text-xl"></i>
                         </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-lg">Đồng bộ dữ liệu đa thiết bị</h4>
-                            <p class="text-sm text-gray-500 mt-1">Sử dụng tính năng này khi bạn đổi máy tính/điện thoại. Lưu dữ liệu lên đám mây và tải về ở máy mới để không bao giờ mất tiến trình điểm danh.</p>
-                            <div class="mt-2 text-xs font-medium text-gray-500" id="syncStatusText">Trạng thái: Đang chờ...</div>
+                        <div class="w-full">
+                            <h4 class="font-bold text-gray-800 text-lg">Sao lưu tiến trình (Xuất mã)</h4>
+                            <p class="text-sm text-gray-500 mt-1 mb-3">Ấn Copy để lấy mã sao lưu. Bạn có thể lưu đoạn mã này vào ghi chú để khôi phục trên thiết bị khác.</p>
+                            <div class="flex gap-2">
+                                <input type="text" id="exportCode" readonly class="flex-1 bg-gray-50 border border-gray-300 text-gray-600 text-sm rounded-lg focus:ring-green-500 focus:border-green-500 block p-2.5 outline-none font-mono" placeholder="Mã sao lưu sẽ tự động tạo khi ấn Copy">
+                                <button onclick="generateAndCopyBackup()" class="text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2 text-center inline-flex items-center transition-colors shadow-sm whitespace-nowrap">
+                                    <i class="fa-regular fa-copy mr-2"></i> Copy mã
+                                </button>
+                            </div>
                         </div>
                     </div>
                     
-                    <div class="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
-                        <button onclick="manualCloudBackup()" class="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Lưu dữ liệu lên Cloud
-                        </button>
-                        <button onclick="manualCloudRestore()" class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors border border-gray-200">
-                            <i class="fa-solid fa-cloud-arrow-down mr-2"></i> Tải dữ liệu từ Cloud về
-                        </button>
+                    <hr class="border-gray-100 mb-8">
+
+                    <!-- Phần Dán Mã -->
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-file-import text-orange-600 text-xl"></i>
+                        </div>
+                        <div class="w-full">
+                            <h4 class="font-bold text-gray-800 text-lg">Khôi phục tiến trình (Nhập mã)</h4>
+                            <p class="text-sm text-gray-500 mt-1 mb-3">Dán đoạn mã đã sao lưu vào đây để khôi phục. <strong class="text-red-500">Lưu ý:</strong> Dữ liệu hiện tại trên máy này sẽ bị ghi đè.</p>
+                            <div class="flex flex-col gap-3">
+                                <textarea id="importCode" rows="3" class="block p-3 w-full text-sm text-gray-900 bg-gray-50 rounded-lg border border-gray-300 focus:ring-orange-500 focus:border-orange-500 outline-none font-mono resize-none" placeholder="Dán mã vào đây..."></textarea>
+                                <button onclick="restoreFromCode()" class="self-start text-white bg-orange-600 hover:bg-orange-700 font-medium rounded-lg text-sm px-5 py-2 text-center inline-flex items-center transition-colors shadow-sm">
+                                    <i class="fa-solid fa-rotate-left mr-2"></i> Khôi phục dữ liệu
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
                 </div>
             </div>
 
@@ -921,7 +939,6 @@
                     if(cloudData) {
                         appData = cloudData; 
                         localStorage.setItem('tutorProData', JSON.stringify(appData));
-                        document.getElementById('syncStatusText').innerText = "Trạng thái: Đã đồng bộ lúc " + new Date().toLocaleTimeString();
                     }
                 }
                 
@@ -937,49 +954,59 @@
             }
         }
 
-        // --- 9. MANUAL SYNC LOGIC ---
-        async function manualCloudBackup() {
-            if(!window.cloudSyncSave) {
-                showToast("Đang kết nối hệ thống, vui lòng chờ...");
-                return;
-            }
+        // --- 9. MANUAL SYNC LOGIC (COPY & PASTE) ---
+        function generateAndCopyBackup() {
             try {
-                await window.cloudSyncSave(appData);
-                showToast("Đã lưu dữ liệu lên Cloud thành công!");
-                document.getElementById('syncStatusText').innerText = "Trạng thái: Đã sao lưu lúc " + new Date().toLocaleTimeString();
-            } catch(e) {
-                showToast("Lỗi khi lưu lên Cloud");
+                // Đóng gói data: Object -> Chuỗi JSON -> Xử lý unicode -> Base64 (để ra mã code ngắn gọn k có ký tự lạ)
+                const dataString = JSON.stringify(appData);
+                const encodedData = btoa(encodeURIComponent(dataString));
+                
+                const exportInput = document.getElementById('exportCode');
+                exportInput.value = encodedData;
+                
+                // Chọn và copy vào clipboard
+                exportInput.select();
+                exportInput.setSelectionRange(0, 99999);
+                document.execCommand('copy');
+                
+                showToast("Đã copy mã sao lưu!");
+            } catch (e) {
+                showToast("Lỗi khi tạo mã sao lưu!");
+                console.error(e);
             }
         }
 
-        async function manualCloudRestore() {
-            if(!window.cloudSyncInit) {
-                showToast("Đang kết nối hệ thống, vui lòng chờ...");
+        function restoreFromCode() {
+            const importInput = document.getElementById('importCode');
+            const code = importInput.value.trim();
+            
+            if (!code) {
+                showToast("Vui lòng dán mã sao lưu vào ô!");
                 return;
             }
-            if(!confirm("CẢNH BÁO: Tải dữ liệu từ Cloud sẽ đè lên dữ liệu hiện tại trên máy này. Bạn có chắc chắn?")) return;
-            
+
+            // Dùng confirm để cảnh báo (do chưa thiết kế Modal cho thông báo)
+            if (!confirm("CẢNH BÁO: Dữ liệu hiện tại sẽ bị thay thế bằng dữ liệu từ mã này. Bạn có chắc chắn?")) {
+                return;
+            }
+
             try {
-                const cloudData = await window.cloudSyncInit();
-                if(cloudData) {
-                    appData = cloudData;
+                // Giải mã: Base64 -> Xử lý unicode -> Chuỗi JSON -> Object
+                const decodedString = decodeURIComponent(atob(code));
+                const parsedData = JSON.parse(decodedString);
+                
+                // Kiểm tra sơ bộ cấu trúc dữ liệu để tránh mã lỗi
+                if (parsedData && parsedData.classes && parsedData.attendance) {
+                    appData = parsedData;
                     saveData();
-                    showToast("Đã tải dữ liệu từ Cloud thành công!");
-                    document.getElementById('syncStatusText').innerText = "Trạng thái: Đã tải về lúc " + new Date().toLocaleTimeString();
-                    // Refresh current view
-                    renderDashboard();
-                    if(!document.getElementById('view-calendar').classList.contains('hidden')) {
-                        renderCalendar();
-                        renderAttendancePanel();
-                    }
-                    if(!document.getElementById('view-classes').classList.contains('hidden')) {
-                        renderClassesList();
-                    }
+                    importInput.value = ''; // Xóa trắng sau khi nhập xong
+                    showToast("Khôi phục dữ liệu thành công!");
                 } else {
-                    showToast("Không tìm thấy dữ liệu trên Cloud (hoặc dữ liệu trống).");
+                    showToast("Mã sao lưu không hợp lệ hoặc bị lỗi!");
                 }
-            } catch(e) {
-                showToast("Lỗi khi tải dữ liệu từ Cloud");
+            } catch (e) {
+                showToast("Mã sao lưu sai định dạng!");
+                console.error(e);
             }
         }
 
