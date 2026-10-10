@@ -58,6 +58,12 @@
                 <button onclick="switchView('classes')" id="nav-classes" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
                     <i class="fa-solid fa-chalkboard-user w-6"></i> Quản lý lớp học
                 </button>
+                <button onclick="switchView('courses')" id="nav-courses" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-laptop-code w-6"></i> Web tự học
+                </button>
+                <button onclick="switchView('settings')" id="nav-settings" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-gear w-6"></i> Cài đặt & Đồng bộ
+                </button>
             </nav>
         </div>
         <div class="p-4 border-t border-gray-100 text-xs text-gray-400 text-center">
@@ -69,7 +75,12 @@
         <!-- Header -->
         <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm shrink-0">
             <h2 id="pageTitle" class="text-xl font-semibold text-gray-800">Tổng quan</h2>
-            <div class="text-sm font-medium text-gray-500 bg-gray-100 py-1.5 px-4 rounded-full" id="currentDateHeader"></div>
+            <div class="flex items-center gap-4">
+                <div id="cloudStatus" class="hidden items-center text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i><span>Đã đồng bộ</span>
+                </div>
+                <div class="text-sm font-medium text-gray-500 bg-gray-100 py-1.5 px-4 rounded-full" id="currentDateHeader"></div>
+            </div>
         </header>
 
         <!-- Content Area -->
@@ -128,6 +139,7 @@
                                     <tr>
                                         <th class="py-2 px-3 rounded-l-lg">Lớp</th>
                                         <th class="py-2 px-3">Học phí/buổi</th>
+                                        <th class="py-2 px-3">Giờ dạy</th>
                                         <th class="py-2 px-3 text-right rounded-r-lg">Lịch học</th>
                                     </tr>
                                 </thead>
@@ -163,7 +175,10 @@
                     <div class="p-5 border-b border-gray-100 bg-blue-50 rounded-t-xl">
                         <h3 class="font-bold text-blue-800 flex justify-between items-center">
                             <span><i class="fa-solid fa-pen-to-square mr-2"></i>Điểm danh</span>
-                            <span id="attendanceDateLabel" class="text-sm font-medium bg-white px-2 py-1 rounded text-blue-600 shadow-sm">10/10/2026</span>
+                            <div class="flex items-center gap-2">
+                                <button onclick="openMakeupModal()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs px-2.5 py-1 rounded shadow-sm transition-colors font-medium" title="Thêm học bù">+ Bù</button>
+                                <span id="attendanceDateLabel" class="text-sm font-medium bg-white px-2 py-1 rounded text-blue-600 shadow-sm">10/10/2026</span>
+                            </div>
                         </h3>
                     </div>
                     <div class="p-4 flex-1 overflow-y-auto" id="attendancePanelList">
@@ -186,6 +201,74 @@
                 </div>
             </div>
 
+            <div id="view-courses" class="hidden fade-in max-w-5xl mx-auto">
+                <h3 class="text-lg font-bold text-gray-800 mb-6">Các khoá học đang tham gia</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Khoá A1 -->
+                    <a href="https://tulehaianhwork-dotcom.github.io/LMS/" target="_blank" class="block group">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all h-full flex flex-col">
+                            <div class="h-40 bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center relative overflow-hidden">
+                                <i class="fa-solid fa-language text-6xl text-white opacity-80 group-hover:scale-110 transition-transform duration-300"></i>
+                            </div>
+                            <div class="p-5 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg mb-2 group-hover:text-blue-600 transition-colors">Khoá A1</h4>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Hệ thống học tập và tài liệu khóa Tiếng Anh A1 cơ bản.</p>
+                                </div>
+                                <div class="mt-4 text-blue-600 text-sm font-medium flex items-center">
+                                    Truy cập ngay <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    <!-- Khoá ôn thi THPTQG -->
+                    <a href="https://tulehaianhwork-dotcom.github.io/LMS-THPTQG/" target="_blank" class="block group">
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all h-full flex flex-col">
+                            <div class="h-40 bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center relative overflow-hidden">
+                                <i class="fa-solid fa-graduation-cap text-6xl text-white opacity-80 group-hover:scale-110 transition-transform duration-300"></i>
+                            </div>
+                            <div class="p-5 flex-1 flex flex-col justify-between">
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-lg mb-2 group-hover:text-purple-600 transition-colors">Khoá ôn thi THPTQG</h4>
+                                    <p class="text-sm text-gray-500 line-clamp-2">Tổng hợp tài liệu, bài giảng luyện thi THPT Quốc Gia môn Tiếng Anh.</p>
+                                </div>
+                                <div class="mt-4 text-purple-600 text-sm font-medium flex items-center">
+                                    Truy cập ngay <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="view-settings" class="hidden fade-in max-w-3xl mx-auto">
+                <h3 class="text-lg font-bold text-gray-800 mb-6">Cài đặt & Đồng bộ Cloud</h3>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-cloud text-blue-600 text-xl"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-gray-800 text-lg">Đồng bộ dữ liệu đa thiết bị</h4>
+                            <p class="text-sm text-gray-500 mt-1">Sử dụng tính năng này khi bạn đổi máy tính/điện thoại. Lưu dữ liệu lên đám mây và tải về ở máy mới để không bao giờ mất tiến trình điểm danh.</p>
+                            <div class="mt-2 text-xs font-medium text-gray-500" id="syncStatusText">Trạng thái: Đang chờ...</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 pt-4 border-t border-gray-100">
+                        <button onclick="manualCloudBackup()" class="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+                            <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Lưu dữ liệu lên Cloud
+                        </button>
+                        <button onclick="manualCloudRestore()" class="flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors border border-gray-200">
+                            <i class="fa-solid fa-cloud-arrow-down mr-2"></i> Tải dữ liệu từ Cloud về
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -204,6 +287,10 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Học phí / Buổi (VNĐ) <span class="text-red-500">*</span></label>
                     <input type="number" id="classFeeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="VD: 200000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Giờ dạy (Dự kiến)</label>
+                    <input type="time" id="classTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Lịch học trong tuần</label>
@@ -240,11 +327,110 @@
         </div>
     </div>
 
+    <!-- Makeup Class Modal -->
+    <div id="makeupModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center fade-in backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800">Thêm Lịch Học Bù</h3>
+                <button onclick="closeMakeupModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Chọn lớp cần học bù</label>
+                    <select id="makeupClassSelectDropdown" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <!-- JS Render -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ngày học bù</label>
+                    <input type="date" id="makeupDateInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeMakeupModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
+                <button onclick="saveMakeupClass()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-50 z-[100] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 w-full max-w-sm text-center">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-solid fa-graduation-cap text-3xl text-blue-600"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-1">Đăng nhập Admin</h2>
+            <p class="text-sm text-gray-500 mb-6">Quản lý Gia Sư Pro</p>
+            
+            <div class="space-y-4">
+                <input type="text" id="adminUsername" placeholder="Tên đăng nhập (nhập: admin)" class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none text-center">
+                <button onclick="handleLogin()" id="loginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors flex justify-center items-center">
+                    Đăng nhập hệ thống
+                </button>
+                <p id="loginError" class="text-red-500 text-xs hidden">Tên đăng nhập không đúng!</p>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
         <i class="fa-solid fa-circle-check text-green-400"></i>
         <span id="toastMsg" class="text-sm font-medium">Thành công</span>
     </div>
+
+    <!-- Firebase Setup & Cloud Sync -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'tutor-pro-default';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            window.cloudSyncInit = async function() {
+                try {
+                    const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                    if (token) {
+                        await signInWithCustomToken(auth, token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    const userId = auth.currentUser.uid;
+                    window.firebaseDbInfo = { db, docRef: doc(db, 'artifacts', appId, 'users', userId, 'tutorData', 'main') };
+                    
+                    // Lấy dữ liệu đã sao lưu trên mây (nếu có)
+                    const docSnap = await getDoc(window.firebaseDbInfo.docRef);
+                    if (docSnap.exists()) {
+                        return docSnap.data().appData;
+                    }
+                } catch (error) {
+                    console.error("Cloud init error:", error);
+                }
+                return null;
+            };
+
+            window.cloudSyncSave = async function(data) {
+                if(!window.firebaseDbInfo) return;
+                try {
+                    const status = document.getElementById('cloudStatus');
+                    status.classList.remove('hidden');
+                    status.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i><span>Đang lưu...</span>';
+                    
+                    await setDoc(window.firebaseDbInfo.docRef, { appData: data });
+                    
+                    status.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2 text-green-600"></i><span class="text-green-600">Đã đồng bộ</span>';
+                    setTimeout(() => status.classList.add('hidden'), 3000);
+                } catch (error) {
+                    console.error("Save error:", error);
+                }
+            };
+        }
+    </script>
 
     <script>
         // --- 1. STATE & DATA INITIALIZATION ---
@@ -254,8 +440,8 @@
         if (!appData) {
             appData = {
                 classes: [
-                    { id: 'c_1', name: 'Toán 12 - Bé An', fee: 200000, schedule: [1, 4] }, // T2, T5
-                    { id: 'c_2', name: 'Anh Giao Tiếp - Anh Bình', fee: 250000, schedule: [0, 6] } // T7, CN
+                    { id: 'c_1', name: 'Toán 12 - Bé An', fee: 200000, schedule: [1, 4], time: '18:00' }, // T2, T5
+                    { id: 'c_2', name: 'Anh Giao Tiếp - Anh Bình', fee: 250000, schedule: [0, 6], time: '19:30' } // T7, CN
                 ],
                 attendance: {}
             };
@@ -266,10 +452,14 @@
         appData.classes.forEach(c => {
             if (!appData.attendance[c.id]) appData.attendance[c.id] = [];
             if (!c.schedule) c.schedule = [];
+            if (c.time === undefined) c.time = '';
         });
 
-        function saveData() {
+        async function saveData() {
             localStorage.setItem('tutorProData', JSON.stringify(appData));
+            if(window.cloudSyncSave) {
+                await window.cloudSyncSave(appData);
+            }
         }
 
         // --- 2. GLOBAL VARIABLES ---
@@ -313,6 +503,8 @@
             document.getElementById('view-dashboard').classList.add('hidden');
             document.getElementById('view-calendar').classList.add('hidden');
             document.getElementById('view-classes').classList.add('hidden');
+            document.getElementById('view-courses').classList.add('hidden');
+            document.getElementById('view-settings').classList.add('hidden');
             
             // Reset nav buttons
             document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -329,7 +521,7 @@
             activeNav.classList.add('text-blue-700', 'bg-blue-50');
 
             // Update Title & Render specific view
-            const titles = { 'dashboard': 'Tổng quan', 'calendar': 'Lịch học & Điểm danh', 'classes': 'Quản lý lớp học' };
+            const titles = { 'dashboard': 'Tổng quan', 'calendar': 'Lịch học & Điểm danh', 'classes': 'Quản lý lớp học', 'courses': 'Web tự học', 'settings': 'Cài đặt' };
             document.getElementById('pageTitle').innerText = titles[viewName];
 
             if (viewName === 'dashboard') renderDashboard();
@@ -363,12 +555,13 @@
                 if (isScheduledToday) {
                     todayClassesCount++;
                     const hasAttendedToday = appData.attendance[cls.id].includes(todayDateStr);
+                    const displayTime = cls.time ? `<span class="text-blue-600 font-semibold mr-2"><i class="fa-regular fa-clock"></i> ${cls.time}</span>` : '';
                     
                     todayClassesHTML += `
                         <div class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-lg border border-gray-100">
                             <div>
-                                <p class="font-medium text-gray-800">${cls.name}</p>
-                                <p class="text-xs text-gray-500">${formatMoney(cls.fee)}</p>
+                                <p class="font-medium text-gray-800">${displayTime}${cls.name}</p>
+                                <p class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)}</p>
                             </div>
                             <div>
                                 ${hasAttendedToday 
@@ -385,6 +578,7 @@
                     <tr class="hover:bg-gray-50">
                         <td class="py-3 px-3 font-medium text-gray-700">${cls.name}</td>
                         <td class="py-3 px-3 text-gray-600">${formatMoney(cls.fee)}</td>
+                        <td class="py-3 px-3 text-blue-600 font-medium text-sm">${cls.time || '-'}</td>
                         <td class="py-3 px-3 text-right text-xs text-gray-500">${schedLabels || 'Chưa xếp lịch'}</td>
                     </tr>
                 `;
@@ -508,11 +702,13 @@
                 // Show classes scheduled for this day OR classes that were already attended on this day (make-up classes)
                 if (isScheduled || isAttended) {
                     hasClasses = true;
+                    const timeTag = cls.time ? `<span class="inline-block bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold ml-2">${cls.time}</span>` : '';
+                    
                     panel.innerHTML += `
                         <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${isAttended ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 shadow-sm'} transition-all cursor-pointer hover:border-blue-300" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
                             <div class="flex flex-col">
-                                <span class="font-semibold ${isAttended ? 'text-blue-800' : 'text-gray-800'}">${cls.name}</span>
-                                <span class="text-xs text-gray-500">${formatMoney(cls.fee)} / buổi</span>
+                                <span class="font-semibold ${isAttended ? 'text-blue-800' : 'text-gray-800'}">${cls.name}${timeTag}</span>
+                                <span class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)} / buổi</span>
                                 ${!isScheduled && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1">Học bù</span>' : ''}
                             </div>
                             
@@ -530,28 +726,7 @@
                         <i class="fa-solid fa-mug-hot text-4xl mb-3 text-gray-300"></i>
                         <p class="text-sm">Không có lịch học nào</p>
                     </div>
-                    
-                    <!-- Allow manual tick for unscheduled classes -->
-                    <div class="mt-8 border-t pt-4">
-                        <p class="text-xs text-gray-500 mb-2">Đánh dấu học bù (ngoài lịch):</p>
-                        <select id="makeupClassSelect" class="w-full border rounded p-2 text-sm bg-white mb-2 outline-none focus:border-blue-400">
-                            <option value="">-- Chọn lớp --</option>
-                            ${appData.classes.filter(c => !c.schedule.includes(dayOfWeek) && !appData.attendance[c.id].includes(selectedDate)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                        </select>
-                        <button onclick="addMakeupClass()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded text-sm font-medium transition-colors">Tick Học bù</button>
-                    </div>
                 `;
-            } else {
-                 panel.innerHTML += `
-                    <!-- Allow manual tick for unscheduled classes -->
-                    <div class="mt-8 border-t pt-4">
-                        <select id="makeupClassSelect" class="w-full border rounded p-2 text-sm bg-white mb-2 outline-none focus:border-blue-400">
-                            <option value="">-- Chọn lớp học bù --</option>
-                            ${appData.classes.filter(c => !c.schedule.includes(dayOfWeek) && !appData.attendance[c.id].includes(selectedDate)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                        </select>
-                        <button onclick="addMakeupClass()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded text-sm font-medium transition-colors">Thêm Học bù</button>
-                    </div>
-                 `;
             }
         }
 
@@ -569,11 +744,49 @@
             renderCalendar(); // Refresh calendar dots
         }
 
-        function addMakeupClass() {
-            const sel = document.getElementById('makeupClassSelect');
-            if (sel.value) {
-                toggleAttendance(sel.value, selectedDate);
+        function openMakeupModal() {
+            const dropdown = document.getElementById('makeupClassSelectDropdown');
+            dropdown.innerHTML = '<option value="">-- Chọn lớp --</option>';
+            appData.classes.forEach(c => {
+                dropdown.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            });
+            
+            // Mặc định chọn ngày hiện tại đang xem trên lịch
+            document.getElementById('makeupDateInput').value = selectedDate;
+            
+            document.getElementById('makeupModal').classList.remove('hidden');
+        }
+
+        function closeMakeupModal() {
+            document.getElementById('makeupModal').classList.add('hidden');
+        }
+
+        function saveMakeupClass() {
+            const classId = document.getElementById('makeupClassSelectDropdown').value;
+            const dateVal = document.getElementById('makeupDateInput').value;
+            
+            if (!classId || !dateVal) {
+                showToast("Vui lòng chọn đủ thông tin!");
+                return;
             }
+            
+            if (!appData.attendance[classId].includes(dateVal)) {
+                appData.attendance[classId].push(dateVal);
+                saveData();
+                showToast("Đã thêm lịch học bù!");
+                
+                // Refresh nếu thêm vào tháng đang xem
+                if (dateVal.startsWith(`${currentCalYear}-${String(currentCalMonth + 1).padStart(2, '0')}`)) {
+                    renderCalendar();
+                }
+                // Refresh nếu thêm vào ngày đang xem
+                if (dateVal === selectedDate) {
+                    renderAttendancePanel();
+                }
+            } else {
+                showToast("Ngày này đã được điểm danh!");
+            }
+            closeMakeupModal();
         }
 
         // --- 6. CLASSES MANAGEMENT LOGIC ---
@@ -594,13 +807,16 @@
                     scheduleBadges = '<span class="text-xs text-gray-400 italic">Chưa xếp lịch</span>';
                 }
 
+                const timeDisplay = cls.time ? `<p class="text-sm font-medium text-blue-600 mb-2"><i class="fa-regular fa-clock mr-1"></i> ${cls.time}</p>` : '';
+
                 grid.innerHTML += `
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
                         <div class="absolute top-4 right-4 flex gap-2">
-                            <button onclick="editClass('${cls.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="openClassModal('${cls.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="deleteClass('${cls.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                         <h4 class="font-bold text-gray-800 text-lg mb-1 pr-12 truncate">${cls.name}</h4>
+                        ${timeDisplay}
                         <p class="text-sm font-medium text-green-600 mb-3"><i class="fa-solid fa-money-bill-wave mr-1"></i> ${formatMoney(cls.fee)} / buổi</p>
                         
                         <div class="mt-4 pt-3 border-t border-gray-100">
@@ -623,6 +839,7 @@
                 document.getElementById('editClassId').value = cls.id;
                 document.getElementById('classNameInput').value = cls.name;
                 document.getElementById('classFeeInput').value = cls.fee;
+                document.getElementById('classTimeInput').value = cls.time || '';
                 
                 cbs.forEach(cb => {
                     if (cls.schedule.includes(parseInt(cb.value))) cb.checked = true;
@@ -632,6 +849,7 @@
                 document.getElementById('editClassId').value = '';
                 document.getElementById('classNameInput').value = '';
                 document.getElementById('classFeeInput').value = '';
+                document.getElementById('classTimeInput').value = '';
             }
         }
 
@@ -643,6 +861,7 @@
             const id = document.getElementById('editClassId').value;
             const name = document.getElementById('classNameInput').value.trim();
             const fee = parseInt(document.getElementById('classFeeInput').value);
+            const time = document.getElementById('classTimeInput').value;
             
             if (!name || isNaN(fee) || fee <= 0) {
                 showToast("Vui lòng nhập tên và học phí hợp lệ!");
@@ -659,12 +878,13 @@
                 const cls = appData.classes.find(c => c.id === id);
                 cls.name = name;
                 cls.fee = fee;
+                cls.time = time;
                 cls.schedule = schedule;
                 showToast("Đã cập nhật lớp học!");
             } else {
                 // Thêm
                 const newId = 'c_' + Date.now();
-                appData.classes.push({ id: newId, name, fee, schedule });
+                appData.classes.push({ id: newId, name, fee, time, schedule });
                 appData.attendance[newId] = [];
                 showToast("Đã thêm lớp học mới!");
             }
@@ -685,9 +905,90 @@
             }
         }
 
-        // --- 7. INIT ---
+        // --- 8. LOGIN LOGIC ---
+        async function handleLogin() {
+            const username = document.getElementById('adminUsername').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+            
+            if (username.toLowerCase() === 'admin') {
+                err.classList.add('hidden');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Đang tải dữ liệu...';
+                
+                // Khởi tạo và đồng bộ dữ liệu Cloud
+                if(window.cloudSyncInit) {
+                    const cloudData = await window.cloudSyncInit();
+                    if(cloudData) {
+                        appData = cloudData; 
+                        localStorage.setItem('tutorProData', JSON.stringify(appData));
+                        document.getElementById('syncStatusText').innerText = "Trạng thái: Đã đồng bộ lúc " + new Date().toLocaleTimeString();
+                    }
+                }
+                
+                // Ẩn màn hình Login & hiển thị App
+                const overlay = document.getElementById('loginOverlay');
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    switchView('dashboard');
+                }, 500);
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        // --- 9. MANUAL SYNC LOGIC ---
+        async function manualCloudBackup() {
+            if(!window.cloudSyncSave) {
+                showToast("Đang kết nối hệ thống, vui lòng chờ...");
+                return;
+            }
+            try {
+                await window.cloudSyncSave(appData);
+                showToast("Đã lưu dữ liệu lên Cloud thành công!");
+                document.getElementById('syncStatusText').innerText = "Trạng thái: Đã sao lưu lúc " + new Date().toLocaleTimeString();
+            } catch(e) {
+                showToast("Lỗi khi lưu lên Cloud");
+            }
+        }
+
+        async function manualCloudRestore() {
+            if(!window.cloudSyncInit) {
+                showToast("Đang kết nối hệ thống, vui lòng chờ...");
+                return;
+            }
+            if(!confirm("CẢNH BÁO: Tải dữ liệu từ Cloud sẽ đè lên dữ liệu hiện tại trên máy này. Bạn có chắc chắn?")) return;
+            
+            try {
+                const cloudData = await window.cloudSyncInit();
+                if(cloudData) {
+                    appData = cloudData;
+                    saveData();
+                    showToast("Đã tải dữ liệu từ Cloud thành công!");
+                    document.getElementById('syncStatusText').innerText = "Trạng thái: Đã tải về lúc " + new Date().toLocaleTimeString();
+                    // Refresh current view
+                    renderDashboard();
+                    if(!document.getElementById('view-calendar').classList.contains('hidden')) {
+                        renderCalendar();
+                        renderAttendancePanel();
+                    }
+                    if(!document.getElementById('view-classes').classList.contains('hidden')) {
+                        renderClassesList();
+                    }
+                } else {
+                    showToast("Không tìm thấy dữ liệu trên Cloud (hoặc dữ liệu trống).");
+                }
+            } catch(e) {
+                showToast("Lỗi khi tải dữ liệu từ Cloud");
+            }
+        }
+
+        // --- 10. INIT ---
         window.onload = function() {
-            switchView('dashboard'); // Mặc định mở view Dashboard
+            // Bắt sự kiện nhấn Enter khi đăng nhập
+            document.getElementById('adminUsername').addEventListener('keypress', function(e) {
+                if(e.key === 'Enter') handleLogin();
+            });
         };
     </script>
 </body>
