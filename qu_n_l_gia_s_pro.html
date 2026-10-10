@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gia Sư Pro - Quản lý Điểm danh & Học phí</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Calendar grid layout */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 1px;
+            background-color: #e2e8f0;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .calendar-cell {
+            background-color: white;
+            min-height: 100px;
+            padding: 0.5rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .calendar-cell:hover { background-color: #f1f5f9; }
+        .calendar-cell.active { background-color: #eff6ff; box-shadow: inset 0 0 0 2px #3b82f6; }
+        .calendar-cell.today { background-color: #fffbeb; }
+        
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-gray-800 h-screen overflow-hidden flex">
+
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col justify-between shadow-sm z-10 hidden md:flex">
+        <div>
+            <div class="h-16 flex items-center px-6 border-b border-gray-100">
+                <i class="fa-solid fa-graduation-cap text-blue-600 text-2xl mr-3"></i>
+                <span class="text-xl font-bold text-gray-800 tracking-tight">Tutor<span class="text-blue-600">Pro</span></span>
+            </div>
+            <nav class="p-4 space-y-1">
+                <button onclick="switchView('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-blue-700 bg-blue-50 transition-colors">
+                    <i class="fa-solid fa-chart-pie w-6"></i> Tổng quan
+                </button>
+                <button onclick="switchView('calendar')" id="nav-calendar" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-regular fa-calendar-days w-6"></i> Lịch & Điểm danh
+                </button>
+                <button onclick="switchView('classes')" id="nav-classes" class="nav-btn w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-chalkboard-user w-6"></i> Quản lý lớp học
+                </button>
+            </nav>
+        </div>
+        <div class="p-4 border-t border-gray-100 text-xs text-gray-400 text-center">
+            Thiết kế cho Màn hình ngang
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        <!-- Header -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm shrink-0">
+            <h2 id="pageTitle" class="text-xl font-semibold text-gray-800">Tổng quan</h2>
+            <div class="text-sm font-medium text-gray-500 bg-gray-100 py-1.5 px-4 rounded-full" id="currentDateHeader"></div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="flex-1 overflow-y-auto p-8 relative">
+            
+            <div id="view-dashboard" class="fade-in max-w-6xl mx-auto">
+                <!-- Thống kê -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i class="fa-solid fa-wallet text-6xl text-green-500"></i>
+                        </div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Doanh thu tháng này</p>
+                        <h3 class="text-3xl font-bold text-gray-800" id="dash-revenue">0đ</h3>
+                        <p class="text-xs text-green-600 mt-2 font-medium bg-green-50 inline-block px-2 py-1 rounded"><i class="fa-solid fa-arrow-trend-up mr-1"></i>Tạm tính</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i class="fa-solid fa-check-double text-6xl text-blue-500"></i>
+                        </div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Số buổi đã dạy (Tháng)</p>
+                        <h3 class="text-3xl font-bold text-gray-800" id="dash-sessions">0</h3>
+                        <p class="text-xs text-blue-600 mt-2 font-medium bg-blue-50 inline-block px-2 py-1 rounded">Buổi học</p>
+                    </div>
+                    <div class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i class="fa-solid fa-calendar-day text-6xl text-orange-500"></i>
+                        </div>
+                        <p class="text-sm font-medium text-gray-500 mb-1">Lịch dạy hôm nay</p>
+                        <h3 class="text-3xl font-bold text-gray-800" id="dash-today-count">0</h3>
+                        <p class="text-xs text-orange-600 mt-2 font-medium bg-orange-50 inline-block px-2 py-1 rounded">Lớp cần dạy</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Danh sách lớp hôm nay -->
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-96">
+                        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-semibold text-gray-800"><i class="fa-regular fa-clock text-blue-500 mr-2"></i>Lịch học hôm nay</h3>
+                            <button onclick="switchView('calendar')" class="text-sm text-blue-600 hover:underline">Điểm danh ngay</button>
+                        </div>
+                        <div class="p-4 flex-1 overflow-y-auto" id="dash-today-list">
+                            <!-- JS render -->
+                        </div>
+                    </div>
+
+                    <!-- Danh sách lớp đang hoạt động -->
+                    <div class="bg-white rounded-xl border border-gray-100 shadow-sm flex flex-col h-96">
+                        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                            <h3 class="font-semibold text-gray-800"><i class="fa-solid fa-list-ul text-purple-500 mr-2"></i>Tổng quan các lớp</h3>
+                            <button onclick="switchView('classes')" class="text-sm text-purple-600 hover:underline">Quản lý</button>
+                        </div>
+                        <div class="p-4 flex-1 overflow-y-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-500 uppercase bg-gray-50">
+                                    <tr>
+                                        <th class="py-2 px-3 rounded-l-lg">Lớp</th>
+                                        <th class="py-2 px-3">Học phí/buổi</th>
+                                        <th class="py-2 px-3 text-right rounded-r-lg">Lịch học</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dash-classes-list" class="divide-y divide-gray-100">
+                                    <!-- JS render -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-calendar" class="hidden fade-in h-full flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+                <!-- Phần Lịch (Trái) -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 flex-1 flex flex-col h-[calc(100vh-8rem)]">
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+                        <button onclick="changeMonth(-1)" class="p-2 hover:bg-gray-200 rounded-full transition-colors"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h3 class="text-lg font-bold text-gray-800" id="calendarMonthYear">Tháng 10, 2026</h3>
+                        <button onclick="changeMonth(1)" class="p-2 hover:bg-gray-200 rounded-full transition-colors"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                    
+                    <div class="grid grid-cols-7 text-center py-3 text-xs font-semibold text-gray-500 bg-white border-b border-gray-100 shrink-0">
+                        <div>CN</div><div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div>
+                    </div>
+                    
+                    <div id="calendarGrid" class="calendar-grid flex-1 bg-gray-200 gap-px">
+                        <!-- JS render cells -->
+                    </div>
+                </div>
+
+                <!-- Phần Tick Điểm Danh (Phải) -->
+                <div class="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col h-[calc(100vh-8rem)]">
+                    <div class="p-5 border-b border-gray-100 bg-blue-50 rounded-t-xl">
+                        <h3 class="font-bold text-blue-800 flex justify-between items-center">
+                            <span><i class="fa-solid fa-pen-to-square mr-2"></i>Điểm danh</span>
+                            <span id="attendanceDateLabel" class="text-sm font-medium bg-white px-2 py-1 rounded text-blue-600 shadow-sm">10/10/2026</span>
+                        </h3>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto" id="attendancePanelList">
+                        <!-- JS render classes to tick -->
+                        <div class="text-center text-gray-400 mt-10 text-sm">Vui lòng chọn ngày trên lịch</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-classes" class="hidden fade-in max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-gray-800">Danh sách Lớp học</h3>
+                    <button onclick="openClassModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        <i class="fa-solid fa-plus mr-1"></i> Thêm lớp mới
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="classesGrid">
+                    <!-- JS render class cards -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="classModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center fade-in backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="font-bold text-gray-800" id="modalTitle">Thêm Lớp Mới</h3>
+                <button onclick="closeClassModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="editClassId">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tên lớp học / Tên học sinh <span class="text-red-500">*</span></label>
+                    <input type="text" id="classNameInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="VD: Toán 12 - Em A">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Học phí / Buổi (VNĐ) <span class="text-red-500">*</span></label>
+                    <input type="number" id="classFeeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="VD: 200000">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Lịch học trong tuần</label>
+                    <div class="flex gap-2 flex-wrap" id="scheduleCheckboxes">
+                        <!-- 0=CN, 1=T2, ... 6=T7 -->
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="1" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T2</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="2" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T3</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="3" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T4</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="4" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T5</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="5" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T6</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="6" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">T7</span>
+                        </label>
+                        <label class="flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-full cursor-pointer hover:bg-gray-200 transition">
+                            <input type="checkbox" value="0" class="schedule-cb w-4 h-4 text-blue-600"> <span class="text-sm font-medium text-gray-700">CN</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button onclick="closeClassModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Hủy</button>
+                <button onclick="saveClass()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">Lưu thông tin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toastMsg" class="text-sm font-medium">Thành công</span>
+    </div>
+
+    <script>
+        // --- 1. STATE & DATA INITIALIZATION ---
+        const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+        
+        let appData = JSON.parse(localStorage.getItem('tutorProData'));
+        if (!appData) {
+            appData = {
+                classes: [
+                    { id: 'c_1', name: 'Toán 12 - Bé An', fee: 200000, schedule: [1, 4] }, // T2, T5
+                    { id: 'c_2', name: 'Anh Giao Tiếp - Anh Bình', fee: 250000, schedule: [0, 6] } // T7, CN
+                ],
+                attendance: {}
+            };
+        }
+        
+        // Data structure normalization (in case old version data exists)
+        if (!appData.attendance) appData.attendance = {};
+        appData.classes.forEach(c => {
+            if (!appData.attendance[c.id]) appData.attendance[c.id] = [];
+            if (!c.schedule) c.schedule = [];
+        });
+
+        function saveData() {
+            localStorage.setItem('tutorProData', JSON.stringify(appData));
+        }
+
+        // --- 2. GLOBAL VARIABLES ---
+        let today = new Date();
+        // Variables for Calendar
+        let currentCalMonth = today.getMonth();
+        let currentCalYear = today.getFullYear();
+        let selectedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        // Utility: Format Money
+        const formatMoney = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+        
+        // Utility: Toast
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Utility: Format Date string YYYY-MM-DD to DD/MM/YYYY
+        function formatDateVN(dateString) {
+            const [y, m, d] = dateString.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        // Setup Header Date
+        const wd = dayNames[today.getDay()];
+        const d = String(today.getDate()).padStart(2, '0');
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const y = today.getFullYear();
+        document.getElementById('currentDateHeader').innerHTML = `<i class="fa-regular fa-clock mr-1"></i> ${wd}, ${d}/${m}/${y}`;
+
+        // --- 3. VIEW ROUTING ---
+        function switchView(viewName) {
+            // Hide all
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-calendar').classList.add('hidden');
+            document.getElementById('view-classes').classList.add('hidden');
+            
+            // Reset nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('text-blue-700', 'bg-blue-50');
+                btn.classList.add('text-gray-600');
+            });
+
+            // Show selected
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            
+            // Active Nav
+            const activeNav = document.getElementById(`nav-${viewName}`);
+            activeNav.classList.remove('text-gray-600');
+            activeNav.classList.add('text-blue-700', 'bg-blue-50');
+
+            // Update Title & Render specific view
+            const titles = { 'dashboard': 'Tổng quan', 'calendar': 'Lịch học & Điểm danh', 'classes': 'Quản lý lớp học' };
+            document.getElementById('pageTitle').innerText = titles[viewName];
+
+            if (viewName === 'dashboard') renderDashboard();
+            if (viewName === 'calendar') {
+                renderCalendar();
+                renderAttendancePanel();
+            }
+            if (viewName === 'classes') renderClassesList();
+        }
+
+        // --- 4. DASHBOARD LOGIC ---
+        function renderDashboard() {
+            const currentMonthPrefix = `${y}-${m}`; // e.g. "2026-10"
+            let totalRevenue = 0;
+            let totalSessions = 0;
+            let todayClassesCount = 0;
+            const todayDayOfWeek = today.getDay();
+            const todayDateStr = `${y}-${m}-${d}`;
+
+            let todayClassesHTML = '';
+            let allClassesHTML = '';
+
+            appData.classes.forEach(cls => {
+                // Calculate Monthly Stats
+                const attendedThisMonth = appData.attendance[cls.id].filter(date => date.startsWith(currentMonthPrefix));
+                totalSessions += attendedThisMonth.length;
+                totalRevenue += attendedThisMonth.length * cls.fee;
+
+                // Today's schedule
+                const isScheduledToday = cls.schedule.includes(todayDayOfWeek);
+                if (isScheduledToday) {
+                    todayClassesCount++;
+                    const hasAttendedToday = appData.attendance[cls.id].includes(todayDateStr);
+                    
+                    todayClassesHTML += `
+                        <div class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-lg border border-gray-100">
+                            <div>
+                                <p class="font-medium text-gray-800">${cls.name}</p>
+                                <p class="text-xs text-gray-500">${formatMoney(cls.fee)}</p>
+                            </div>
+                            <div>
+                                ${hasAttendedToday 
+                                    ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded"><i class="fa-solid fa-check mr-1"></i>Đã dạy</span>' 
+                                    : '<span class="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-semibold rounded"><i class="fa-regular fa-clock mr-1"></i>Chưa dạy</span>'}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // All classes preview
+                const schedLabels = cls.schedule.map(s => dayNames[s]).join(', ');
+                allClassesHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-3 font-medium text-gray-700">${cls.name}</td>
+                        <td class="py-3 px-3 text-gray-600">${formatMoney(cls.fee)}</td>
+                        <td class="py-3 px-3 text-right text-xs text-gray-500">${schedLabels || 'Chưa xếp lịch'}</td>
+                    </tr>
+                `;
+            });
+
+            // Update DOM
+            document.getElementById('dash-revenue').innerText = formatMoney(totalRevenue);
+            document.getElementById('dash-sessions').innerText = totalSessions;
+            document.getElementById('dash-today-count').innerText = todayClassesCount;
+            
+            document.getElementById('dash-today-list').innerHTML = todayClassesHTML || '<div class="text-center text-gray-400 mt-10 text-sm">Hôm nay không có lịch dạy</div>';
+            document.getElementById('dash-classes-list').innerHTML = allClassesHTML;
+        }
+
+        // --- 5. CALENDAR & ATTENDANCE LOGIC ---
+        function changeMonth(delta) {
+            currentCalMonth += delta;
+            if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+            if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            
+            const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+            document.getElementById('calendarMonthYear').innerText = `${monthNames[currentCalMonth]}, ${currentCalYear}`;
+
+            const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+            const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+            
+            // Format YYYY-MM for matching
+            const mmStr = String(currentCalMonth + 1).padStart(2, '0');
+            const yyStr = currentCalYear;
+
+            // Pre-calculate which days have scheduled classes or attended classes
+            let scheduleMap = {}; // dateStr => boolean
+            let attendanceMap = {}; // dateStr => int (count)
+            
+            appData.classes.forEach(cls => {
+                // Check schedule per weekday
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dStr = String(i).padStart(2, '0');
+                    const fullDate = `${yyStr}-${mmStr}-${dStr}`;
+                    const dateObj = new Date(currentCalYear, currentCalMonth, i);
+                    
+                    if (cls.schedule.includes(dateObj.getDay())) {
+                        scheduleMap[fullDate] = true;
+                    }
+                }
+                // Check attendance
+                appData.attendance[cls.id].forEach(dateStr => {
+                    if (dateStr.startsWith(`${yyStr}-${mmStr}`)) {
+                        attendanceMap[dateStr] = (attendanceMap[dateStr] || 0) + 1;
+                    }
+                });
+            });
+
+            // Empty cells for previous month
+            for (let i = 0; i < firstDay; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bg-gray-50'; // Empty style
+                grid.appendChild(cell);
+            }
+
+            // Days cells
+            const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+            for (let i = 1; i <= daysInMonth; i++) {
+                const cell = document.createElement('div');
+                const dStr = String(i).padStart(2, '0');
+                const fullDate = `${yyStr}-${mmStr}-${dStr}`;
+                
+                let classesClasses = 'calendar-cell flex flex-col items-start justify-start p-2';
+                if (fullDate === todayStr) classesClasses += ' today font-bold text-blue-600';
+                if (fullDate === selectedDate) classesClasses += ' active';
+
+                cell.className = classesClasses;
+                cell.onclick = () => selectDate(fullDate);
+
+                let indicatorsHTML = '';
+                
+                // Dot for schedule
+                if (scheduleMap[fullDate]) {
+                    indicatorsHTML += `<div class="w-2 h-2 rounded-full bg-orange-400 mt-1 mx-auto" title="Có lịch học"></div>`;
+                }
+                // Checks for attendance
+                if (attendanceMap[fullDate]) {
+                    indicatorsHTML += `<div class="mt-1 flex items-center gap-1 justify-center bg-green-100 text-green-700 text-[10px] px-1 rounded-full"><i class="fa-solid fa-check"></i> ${attendanceMap[fullDate]}</div>`;
+                }
+
+                cell.innerHTML = `
+                    <div class="w-full text-right ${fullDate === todayStr ? '' : 'text-gray-700'}">${i}</div>
+                    <div class="w-full flex flex-col gap-1 mt-1">${indicatorsHTML}</div>
+                `;
+                grid.appendChild(cell);
+            }
+        }
+
+        function selectDate(dateStr) {
+            selectedDate = dateStr;
+            renderCalendar(); // Re-render to show active state
+            renderAttendancePanel();
+        }
+
+        function renderAttendancePanel() {
+            document.getElementById('attendanceDateLabel').innerText = formatDateVN(selectedDate);
+            const panel = document.getElementById('attendancePanelList');
+            panel.innerHTML = '';
+
+            const dateObj = new Date(selectedDate);
+            const dayOfWeek = dateObj.getDay(); // 0-6
+
+            let hasClasses = false;
+
+            appData.classes.forEach(cls => {
+                const isScheduled = cls.schedule.includes(dayOfWeek);
+                const isAttended = appData.attendance[cls.id].includes(selectedDate);
+                
+                // Show classes scheduled for this day OR classes that were already attended on this day (make-up classes)
+                if (isScheduled || isAttended) {
+                    hasClasses = true;
+                    panel.innerHTML += `
+                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${isAttended ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 shadow-sm'} transition-all cursor-pointer hover:border-blue-300" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
+                            <div class="flex flex-col">
+                                <span class="font-semibold ${isAttended ? 'text-blue-800' : 'text-gray-800'}">${cls.name}</span>
+                                <span class="text-xs text-gray-500">${formatMoney(cls.fee)} / buổi</span>
+                                ${!isScheduled && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1">Học bù</span>' : ''}
+                            </div>
+                            
+                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAttended ? 'bg-blue-500 border-blue-500 text-white' : 'bg-gray-100 border-gray-300 text-transparent'}">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasClasses) {
+                panel.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-gray-400 mt-10">
+                        <i class="fa-solid fa-mug-hot text-4xl mb-3 text-gray-300"></i>
+                        <p class="text-sm">Không có lịch học nào</p>
+                    </div>
+                    
+                    <!-- Allow manual tick for unscheduled classes -->
+                    <div class="mt-8 border-t pt-4">
+                        <p class="text-xs text-gray-500 mb-2">Đánh dấu học bù (ngoài lịch):</p>
+                        <select id="makeupClassSelect" class="w-full border rounded p-2 text-sm bg-white mb-2 outline-none focus:border-blue-400">
+                            <option value="">-- Chọn lớp --</option>
+                            ${appData.classes.filter(c => !c.schedule.includes(dayOfWeek) && !appData.attendance[c.id].includes(selectedDate)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                        <button onclick="addMakeupClass()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded text-sm font-medium transition-colors">Tick Học bù</button>
+                    </div>
+                `;
+            } else {
+                 panel.innerHTML += `
+                    <!-- Allow manual tick for unscheduled classes -->
+                    <div class="mt-8 border-t pt-4">
+                        <select id="makeupClassSelect" class="w-full border rounded p-2 text-sm bg-white mb-2 outline-none focus:border-blue-400">
+                            <option value="">-- Chọn lớp học bù --</option>
+                            ${appData.classes.filter(c => !c.schedule.includes(dayOfWeek) && !appData.attendance[c.id].includes(selectedDate)).map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
+                        </select>
+                        <button onclick="addMakeupClass()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 rounded text-sm font-medium transition-colors">Thêm Học bù</button>
+                    </div>
+                 `;
+            }
+        }
+
+        function toggleAttendance(classId, dateStr) {
+            const idx = appData.attendance[classId].indexOf(dateStr);
+            if (idx > -1) {
+                appData.attendance[classId].splice(idx, 1); // untick
+                showToast("Đã hủy điểm danh");
+            } else {
+                appData.attendance[classId].push(dateStr); // tick
+                showToast("Điểm danh thành công!");
+            }
+            saveData();
+            renderAttendancePanel();
+            renderCalendar(); // Refresh calendar dots
+        }
+
+        function addMakeupClass() {
+            const sel = document.getElementById('makeupClassSelect');
+            if (sel.value) {
+                toggleAttendance(sel.value, selectedDate);
+            }
+        }
+
+        // --- 6. CLASSES MANAGEMENT LOGIC ---
+        function renderClassesList() {
+            const grid = document.getElementById('classesGrid');
+            grid.innerHTML = '';
+
+            appData.classes.forEach(cls => {
+                // Generate badgets for schedule
+                let scheduleBadges = '';
+                if(cls.schedule.length > 0) {
+                     // Sort schedule 1,2..6,0
+                    let sortedSch = [...cls.schedule].sort((a,b) => (a===0?7:a) - (b===0?7:b));
+                    sortedSch.forEach(s => {
+                        scheduleBadges += `<span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100 mr-1 mb-1">${dayNames[s]}</span>`;
+                    });
+                } else {
+                    scheduleBadges = '<span class="text-xs text-gray-400 italic">Chưa xếp lịch</span>';
+                }
+
+                grid.innerHTML += `
+                    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
+                        <div class="absolute top-4 right-4 flex gap-2">
+                            <button onclick="editClass('${cls.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteClass('${cls.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-lg mb-1 pr-12 truncate">${cls.name}</h4>
+                        <p class="text-sm font-medium text-green-600 mb-3"><i class="fa-solid fa-money-bill-wave mr-1"></i> ${formatMoney(cls.fee)} / buổi</p>
+                        
+                        <div class="mt-4 pt-3 border-t border-gray-100">
+                            <p class="text-xs text-gray-500 mb-2">Lịch học trong tuần:</p>
+                            <div>${scheduleBadges}</div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openClassModal(classId = null) {
+            document.getElementById('classModal').classList.remove('hidden');
+            const cbs = document.querySelectorAll('.schedule-cb');
+            cbs.forEach(cb => cb.checked = false);
+
+            if (classId) {
+                document.getElementById('modalTitle').innerText = "Sửa Thông Tin Lớp";
+                const cls = appData.classes.find(c => c.id === classId);
+                document.getElementById('editClassId').value = cls.id;
+                document.getElementById('classNameInput').value = cls.name;
+                document.getElementById('classFeeInput').value = cls.fee;
+                
+                cbs.forEach(cb => {
+                    if (cls.schedule.includes(parseInt(cb.value))) cb.checked = true;
+                });
+            } else {
+                document.getElementById('modalTitle').innerText = "Thêm Lớp Mới";
+                document.getElementById('editClassId').value = '';
+                document.getElementById('classNameInput').value = '';
+                document.getElementById('classFeeInput').value = '';
+            }
+        }
+
+        function closeClassModal() {
+            document.getElementById('classModal').classList.add('hidden');
+        }
+
+        function saveClass() {
+            const id = document.getElementById('editClassId').value;
+            const name = document.getElementById('classNameInput').value.trim();
+            const fee = parseInt(document.getElementById('classFeeInput').value);
+            
+            if (!name || isNaN(fee) || fee <= 0) {
+                showToast("Vui lòng nhập tên và học phí hợp lệ!");
+                return;
+            }
+
+            const schedule = [];
+            document.querySelectorAll('.schedule-cb:checked').forEach(cb => {
+                schedule.push(parseInt(cb.value));
+            });
+
+            if (id) {
+                // Sửa
+                const cls = appData.classes.find(c => c.id === id);
+                cls.name = name;
+                cls.fee = fee;
+                cls.schedule = schedule;
+                showToast("Đã cập nhật lớp học!");
+            } else {
+                // Thêm
+                const newId = 'c_' + Date.now();
+                appData.classes.push({ id: newId, name, fee, schedule });
+                appData.attendance[newId] = [];
+                showToast("Đã thêm lớp học mới!");
+            }
+
+            saveData();
+            closeClassModal();
+            renderClassesList();
+        }
+
+        function deleteClass(id) {
+            // Thay thế alert/confirm bằng Custom Modal trong tương lai, tạm dùng confirm để an toàn dữ liệu
+            if(confirm('CẢNH BÁO: Bạn có chắc muốn xóa lớp này? Toàn bộ lịch sử điểm danh của lớp cũng sẽ bị xóa vĩnh viễn.')) {
+                appData.classes = appData.classes.filter(c => c.id !== id);
+                delete appData.attendance[id];
+                saveData();
+                showToast("Đã xóa lớp học");
+                renderClassesList();
+            }
+        }
+
+        // --- 7. INIT ---
+        window.onload = function() {
+            switchView('dashboard'); // Mặc định mở view Dashboard
+        };
+    </script>
+</body>
+</html>
