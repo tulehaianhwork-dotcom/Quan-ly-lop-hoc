@@ -306,9 +306,25 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Học phí / Buổi (VNĐ) <span class="text-red-500">*</span></label>
                     <input type="number" id="classFeeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all" placeholder="VD: 200000">
                 </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Từ giờ</label>
+                        <input type="time" id="classStartTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đến giờ</label>
+                        <input type="time" id="classEndTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    </div>
+                </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Giờ dạy (Dự kiến)</label>
-                    <input type="time" id="classTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Màu hiển thị trên lịch</label>
+                    <select id="classColorInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+                        <option value="blue" class="text-blue-600 font-medium">Màu Xanh Dương</option>
+                        <option value="green" class="text-green-600 font-medium">Màu Xanh Lá</option>
+                        <option value="purple" class="text-purple-600 font-medium">Màu Tím</option>
+                        <option value="red" class="text-red-600 font-medium">Màu Đỏ</option>
+                        <option value="orange" class="text-orange-600 font-medium">Màu Cam</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Lịch học trong tuần</label>
@@ -362,6 +378,16 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Ngày học bù</label>
                     <input type="date" id="makeupDateInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Từ giờ</label>
+                        <input type="time" id="makeupStartTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Đến giờ</label>
+                        <input type="time" id="makeupEndTimeInput" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
                 </div>
             </div>
             <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
@@ -454,23 +480,42 @@
         // --- 1. STATE & DATA INITIALIZATION ---
         const dayNames = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
         
+        const colorClasses = {
+            'blue': { bg: 'bg-blue-500', text: 'text-blue-600', lightBg: 'bg-blue-50', border: 'border-blue-500', lightBorder: 'border-blue-200' },
+            'green': { bg: 'bg-green-500', text: 'text-green-600', lightBg: 'bg-green-50', border: 'border-green-500', lightBorder: 'border-green-200' },
+            'purple': { bg: 'bg-purple-500', text: 'text-purple-600', lightBg: 'bg-purple-50', border: 'border-purple-500', lightBorder: 'border-purple-200' },
+            'red': { bg: 'bg-red-500', text: 'text-red-600', lightBg: 'bg-red-50', border: 'border-red-500', lightBorder: 'border-red-200' },
+            'orange': { bg: 'bg-orange-500', text: 'text-orange-600', lightBg: 'bg-orange-50', border: 'border-orange-500', lightBorder: 'border-orange-200' }
+        };
+        
         let appData = JSON.parse(localStorage.getItem('tutorProData'));
         if (!appData) {
             appData = {
                 classes: [
-                    { id: 'c_1', name: 'Toán 12 - Bé An', fee: 200000, schedule: [1, 4], time: '18:00' }, // T2, T5
-                    { id: 'c_2', name: 'Anh Giao Tiếp - Anh Bình', fee: 250000, schedule: [0, 6], time: '19:30' } // T7, CN
+                    { id: 'c_1', name: 'Toán 12 - Bé An', fee: 200000, schedule: [1, 4], startTime: '18:00', endTime: '19:30', color: 'blue' },
+                    { id: 'c_2', name: 'Anh Giao Tiếp - Anh Bình', fee: 250000, schedule: [0, 6], startTime: '19:30', endTime: '21:00', color: 'green' }
                 ],
-                attendance: {}
+                attendance: {},
+                customTimes: {}
             };
         }
         
         // Data structure normalization (in case old version data exists)
         if (!appData.attendance) appData.attendance = {};
+        if (!appData.customTimes) appData.customTimes = {};
         appData.classes.forEach(c => {
             if (!appData.attendance[c.id]) appData.attendance[c.id] = [];
             if (!c.schedule) c.schedule = [];
-            if (c.time === undefined) c.time = '';
+            
+            // Tự động chuyển đổi dữ liệu giờ học cũ (nếu có)
+            if (c.time !== undefined) {
+                c.startTime = c.time;
+                c.endTime = '';
+                delete c.time;
+            }
+            if (c.startTime === undefined) c.startTime = '';
+            if (c.endTime === undefined) c.endTime = '';
+            if (!c.color) c.color = 'blue';
         });
 
         async function saveData() {
@@ -514,6 +559,13 @@
         const m = String(today.getMonth() + 1).padStart(2, '0');
         const y = today.getFullYear();
         document.getElementById('currentDateHeader').innerHTML = `<i class="fa-regular fa-clock mr-1"></i> ${wd}, ${d}/${m}/${y}`;
+
+        // Utility: Format Time Display
+        function formatTimeDisplay(start, end) {
+            if (!start && !end) return '';
+            if (start && end) return `${start} - ${end}`;
+            return start || end;
+        }
 
         // --- 3. VIEW ROUTING ---
         function switchView(viewName) {
@@ -573,13 +625,18 @@
                 if (isScheduledToday) {
                     todayClassesCount++;
                     const hasAttendedToday = appData.attendance[cls.id].includes(todayDateStr);
-                    const displayTime = cls.time ? `<span class="text-blue-600 font-semibold mr-2"><i class="fa-regular fa-clock"></i> ${cls.time}</span>` : '';
+                    const timeStr = formatTimeDisplay(cls.startTime, cls.endTime);
+                    const colors = colorClasses[cls.color] || colorClasses['blue'];
+                    const displayTime = timeStr ? `<span class="${colors.text} font-semibold mr-2"><i class="fa-regular fa-clock"></i> ${timeStr}</span>` : '';
                     
                     todayClassesHTML += `
                         <div class="flex justify-between items-center p-3 mb-2 bg-gray-50 rounded-lg border border-gray-100">
-                            <div>
-                                <p class="font-medium text-gray-800">${displayTime}${cls.name}</p>
-                                <p class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)}</p>
+                            <div class="flex items-center">
+                                <div class="w-3 h-3 rounded-full mr-3 ${colors.bg}"></div>
+                                <div>
+                                    <p class="font-medium text-gray-800">${displayTime}${cls.name}</p>
+                                    <p class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)}</p>
+                                </div>
                             </div>
                             <div>
                                 ${hasAttendedToday 
@@ -592,11 +649,16 @@
 
                 // All classes preview
                 const schedLabels = cls.schedule.map(s => dayNames[s]).join(', ');
+                const timeStr = formatTimeDisplay(cls.startTime, cls.endTime);
+                const colors = colorClasses[cls.color] || colorClasses['blue'];
                 allClassesHTML += `
                     <tr class="hover:bg-gray-50">
-                        <td class="py-3 px-3 font-medium text-gray-700">${cls.name}</td>
+                        <td class="py-3 px-3 font-medium text-gray-700 flex items-center gap-2">
+                            <div class="w-2.5 h-2.5 rounded-full ${colors.bg}"></div>
+                            ${cls.name}
+                        </td>
                         <td class="py-3 px-3 text-gray-600">${formatMoney(cls.fee)}</td>
-                        <td class="py-3 px-3 text-blue-600 font-medium text-sm">${cls.time || '-'}</td>
+                        <td class="py-3 px-3 text-blue-600 font-medium text-sm">${timeStr || '-'}</td>
                         <td class="py-3 px-3 text-right text-xs text-gray-500">${schedLabels || 'Chưa xếp lịch'}</td>
                     </tr>
                 `;
@@ -634,7 +696,7 @@
             const yyStr = currentCalYear;
 
             // Pre-calculate which days have scheduled classes or attended classes
-            let scheduleMap = {}; // dateStr => boolean
+            let scheduleMap = {}; // dateStr => array of classes
             let attendanceMap = {}; // dateStr => int (count)
             
             appData.classes.forEach(cls => {
@@ -645,7 +707,8 @@
                     const dateObj = new Date(currentCalYear, currentCalMonth, i);
                     
                     if (cls.schedule.includes(dateObj.getDay())) {
-                        scheduleMap[fullDate] = true;
+                        if (!scheduleMap[fullDate]) scheduleMap[fullDate] = [];
+                        scheduleMap[fullDate].push(cls);
                     }
                 }
                 // Check attendance
@@ -682,7 +745,12 @@
                 
                 // Dot for schedule
                 if (scheduleMap[fullDate]) {
-                    indicatorsHTML += `<div class="w-2 h-2 rounded-full bg-orange-400 mt-1 mx-auto" title="Có lịch học"></div>`;
+                    indicatorsHTML += `<div class="flex gap-1 justify-center mt-1">`;
+                    scheduleMap[fullDate].forEach(c => {
+                        const colors = colorClasses[c.color] || colorClasses['blue'];
+                        indicatorsHTML += `<div class="w-2 h-2 rounded-full ${colors.bg}" title="${c.name}"></div>`;
+                    });
+                    indicatorsHTML += `</div>`;
                 }
                 // Checks for attendance
                 if (attendanceMap[fullDate]) {
@@ -716,21 +784,32 @@
             appData.classes.forEach(cls => {
                 const isScheduled = cls.schedule.includes(dayOfWeek);
                 const isAttended = appData.attendance[cls.id].includes(selectedDate);
+                const colors = colorClasses[cls.color] || colorClasses['blue'];
                 
                 // Show classes scheduled for this day OR classes that were already attended on this day (make-up classes)
                 if (isScheduled || isAttended) {
                     hasClasses = true;
-                    const timeTag = cls.time ? `<span class="inline-block bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full font-bold ml-2">${cls.time}</span>` : '';
                     
+                    // Check if custom make-up time exists
+                    let timeStr = formatTimeDisplay(cls.startTime, cls.endTime);
+                    const customTimeKey = `${cls.id}_${selectedDate}`;
+                    if (appData.customTimes && appData.customTimes[customTimeKey]) {
+                        timeStr = appData.customTimes[customTimeKey];
+                    }
+
+                    const timeTag = timeStr ? `<span class="inline-block ${colors.lightBg} ${colors.text} text-[10px] px-2 py-0.5 rounded-full font-bold ml-2 border ${colors.lightBorder}">${timeStr}</span>` : '';
+                    const boxBorderClass = isAttended ? `${colors.lightBg} ${colors.border}` : 'bg-white border-gray-200 shadow-sm hover:border-gray-300';
+                    const iconColorClass = isAttended ? `${colors.bg} border-transparent text-white` : 'bg-gray-100 border-gray-300 text-transparent';
+
                     panel.innerHTML += `
-                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${isAttended ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200 shadow-sm'} transition-all cursor-pointer hover:border-blue-300" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
+                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${boxBorderClass} transition-all cursor-pointer" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
                             <div class="flex flex-col">
-                                <span class="font-semibold ${isAttended ? 'text-blue-800' : 'text-gray-800'}">${cls.name}${timeTag}</span>
+                                <span class="font-semibold ${isAttended ? colors.text : 'text-gray-800'}">${cls.name}${timeTag}</span>
                                 <span class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)} / buổi</span>
-                                ${!isScheduled && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1">Học bù</span>' : ''}
+                                ${!isScheduled && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1 border border-yellow-200 shadow-sm">Buổi học bù</span>' : ''}
                             </div>
                             
-                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${isAttended ? 'bg-blue-500 border-blue-500 text-white' : 'bg-gray-100 border-gray-300 text-transparent'}">
+                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${iconColorClass}">
                                 <i class="fa-solid fa-check"></i>
                             </div>
                         </div>
@@ -771,6 +850,8 @@
             
             // Mặc định chọn ngày hiện tại đang xem trên lịch
             document.getElementById('makeupDateInput').value = selectedDate;
+            document.getElementById('makeupStartTimeInput').value = '';
+            document.getElementById('makeupEndTimeInput').value = '';
             
             document.getElementById('makeupModal').classList.remove('hidden');
         }
@@ -782,6 +863,8 @@
         function saveMakeupClass() {
             const classId = document.getElementById('makeupClassSelectDropdown').value;
             const dateVal = document.getElementById('makeupDateInput').value;
+            const sTime = document.getElementById('makeupStartTimeInput').value;
+            const eTime = document.getElementById('makeupEndTimeInput').value;
             
             if (!classId || !dateVal) {
                 showToast("Vui lòng chọn đủ thông tin!");
@@ -790,6 +873,14 @@
             
             if (!appData.attendance[classId].includes(dateVal)) {
                 appData.attendance[classId].push(dateVal);
+                
+                // Save custom time if provided
+                if (sTime || eTime) {
+                    const customTimeStr = formatTimeDisplay(sTime, eTime);
+                    if (!appData.customTimes) appData.customTimes = {};
+                    appData.customTimes[`${classId}_${dateVal}`] = customTimeStr;
+                }
+
                 saveData();
                 showToast("Đã thêm lịch học bù!");
                 
@@ -813,19 +904,21 @@
             grid.innerHTML = '';
 
             appData.classes.forEach(cls => {
+                const colors = colorClasses[cls.color] || colorClasses['blue'];
                 // Generate badgets for schedule
                 let scheduleBadges = '';
                 if(cls.schedule.length > 0) {
                      // Sort schedule 1,2..6,0
                     let sortedSch = [...cls.schedule].sort((a,b) => (a===0?7:a) - (b===0?7:b));
                     sortedSch.forEach(s => {
-                        scheduleBadges += `<span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-1 rounded border border-blue-100 mr-1 mb-1">${dayNames[s]}</span>`;
+                        scheduleBadges += `<span class="inline-block ${colors.lightBg} ${colors.text} text-[10px] font-bold px-2 py-1 rounded border ${colors.lightBorder} mr-1 mb-1">${dayNames[s]}</span>`;
                     });
                 } else {
                     scheduleBadges = '<span class="text-xs text-gray-400 italic">Chưa xếp lịch</span>';
                 }
 
-                const timeDisplay = cls.time ? `<p class="text-sm font-medium text-blue-600 mb-2"><i class="fa-regular fa-clock mr-1"></i> ${cls.time}</p>` : '';
+                const timeStr = formatTimeDisplay(cls.startTime, cls.endTime);
+                const timeDisplay = timeStr ? `<p class="text-sm font-medium ${colors.text} mb-2"><i class="fa-regular fa-clock mr-1"></i> ${timeStr}</p>` : '';
 
                 grid.innerHTML += `
                     <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative">
@@ -833,7 +926,10 @@
                             <button onclick="openClassModal('${cls.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Sửa"><i class="fa-solid fa-pen-to-square"></i></button>
                             <button onclick="deleteClass('${cls.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Xóa"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
-                        <h4 class="font-bold text-gray-800 text-lg mb-1 pr-12 truncate">${cls.name}</h4>
+                        <div class="flex items-center gap-2 mb-1 pr-12">
+                            <div class="w-3 h-3 rounded-full shrink-0 ${colors.bg}"></div>
+                            <h4 class="font-bold text-gray-800 text-lg truncate">${cls.name}</h4>
+                        </div>
                         ${timeDisplay}
                         <p class="text-sm font-medium text-green-600 mb-3"><i class="fa-solid fa-money-bill-wave mr-1"></i> ${formatMoney(cls.fee)} / buổi</p>
                         
@@ -857,7 +953,9 @@
                 document.getElementById('editClassId').value = cls.id;
                 document.getElementById('classNameInput').value = cls.name;
                 document.getElementById('classFeeInput').value = cls.fee;
-                document.getElementById('classTimeInput').value = cls.time || '';
+                document.getElementById('classStartTimeInput').value = cls.startTime || '';
+                document.getElementById('classEndTimeInput').value = cls.endTime || '';
+                document.getElementById('classColorInput').value = cls.color || 'blue';
                 
                 cbs.forEach(cb => {
                     if (cls.schedule.includes(parseInt(cb.value))) cb.checked = true;
@@ -867,7 +965,9 @@
                 document.getElementById('editClassId').value = '';
                 document.getElementById('classNameInput').value = '';
                 document.getElementById('classFeeInput').value = '';
-                document.getElementById('classTimeInput').value = '';
+                document.getElementById('classStartTimeInput').value = '';
+                document.getElementById('classEndTimeInput').value = '';
+                document.getElementById('classColorInput').value = 'blue';
             }
         }
 
@@ -879,7 +979,9 @@
             const id = document.getElementById('editClassId').value;
             const name = document.getElementById('classNameInput').value.trim();
             const fee = parseInt(document.getElementById('classFeeInput').value);
-            const time = document.getElementById('classTimeInput').value;
+            const startTime = document.getElementById('classStartTimeInput').value;
+            const endTime = document.getElementById('classEndTimeInput').value;
+            const color = document.getElementById('classColorInput').value;
             
             if (!name || isNaN(fee) || fee <= 0) {
                 showToast("Vui lòng nhập tên và học phí hợp lệ!");
@@ -896,13 +998,15 @@
                 const cls = appData.classes.find(c => c.id === id);
                 cls.name = name;
                 cls.fee = fee;
-                cls.time = time;
+                cls.startTime = startTime;
+                cls.endTime = endTime;
+                cls.color = color;
                 cls.schedule = schedule;
                 showToast("Đã cập nhật lớp học!");
             } else {
                 // Thêm
                 const newId = 'c_' + Date.now();
-                appData.classes.push({ id: newId, name, fee, time, schedule });
+                appData.classes.push({ id: newId, name, fee, startTime, endTime, color, schedule });
                 appData.attendance[newId] = [];
                 showToast("Đã thêm lớp học mới!");
             }
