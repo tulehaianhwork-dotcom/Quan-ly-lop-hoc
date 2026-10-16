@@ -404,6 +404,32 @@
         </div>
     </div>
 
+    <!-- Quick Reschedule Modal -->
+    <div id="quickMenuModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-end sm:items-center justify-center fade-in backdrop-blur-sm">
+        <div class="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:max-w-sm p-5">
+            <div class="mb-4">
+                <h3 class="font-bold text-gray-800" id="quickMenuTitle">Lớp</h3>
+                <p class="text-xs text-gray-500">Buổi ngày <span id="quickMenuDate"></span></p>
+            </div>
+            <div class="space-y-2">
+                <button onclick="quickMoveNextWeek()" class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-gray-700 transition-colors">
+                    <i class="fa-solid fa-forward w-5 text-blue-500"></i> Dời sang tuần sau
+                </button>
+                <button onclick="quickMoveTomorrow()" class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 text-sm font-medium text-gray-700 transition-colors">
+                    <i class="fa-solid fa-angle-right w-5 text-blue-500"></i> Dời sang ngày mai
+                </button>
+                <div class="flex gap-2 items-center pt-1">
+                    <input type="date" id="quickMoveDateInput" class="flex-1 border border-gray-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+                    <button onclick="quickMoveCustom()" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">Dời</button>
+                </div>
+                <button onclick="quickCancel()" class="w-full text-left px-4 py-3 rounded-lg border border-red-200 hover:bg-red-50 text-sm font-medium text-red-600 transition-colors">
+                    <i class="fa-solid fa-ban w-5"></i> Hủy buổi này (không tính tiền)
+                </button>
+            </div>
+            <button onclick="closeQuickMenu()" class="w-full mt-3 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg">Đóng</button>
+        </div>
+    </div>
+
     <!-- Receipt (Phiếu học phí) Modal -->
     <div id="receiptModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 z-50 hidden flex items-center justify-center fade-in backdrop-blur-sm p-4">
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
@@ -418,7 +444,8 @@
             <div id="receiptBody" class="p-5 overflow-y-auto"></div>
             <div class="flex justify-end gap-2 p-4 border-t border-gray-100 bg-gray-50 rounded-b-xl no-print">
                 <button onclick="closeReceiptModal()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100">Đóng</button>
-                <button onclick="window.print()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"><i class="fa-solid fa-print mr-1"></i> In phiếu</button>
+                <button onclick="window.print()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100"><i class="fa-solid fa-print mr-1"></i> In</button>
+                <button onclick="copyReceiptText()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm"><i class="fa-solid fa-copy mr-1"></i> Copy gửi Zalo</button>
             </div>
         </div>
     </div>
@@ -529,6 +556,9 @@
         // Data structure normalization (in case old version data exists)
         if (!appData.attendance) appData.attendance = {};
         if (!appData.customTimes) appData.customTimes = {};
+        // Ngoại lệ lịch: key = `${classId}_${YYYY-MM-DD}`
+        // { type:'cancel' } | { type:'moved', to:'YYYY-MM-DD' } | { type:'extra', from:'YYYY-MM-DD' }
+        if (!appData.exceptions) appData.exceptions = {};
         appData.classes.forEach(c => {
             if (!appData.attendance[c.id]) appData.attendance[c.id] = [];
             if (!c.schedule) c.schedule = [];
@@ -732,7 +762,11 @@
                     const fullDate = `${yyStr}-${mmStr}-${dStr}`;
                     const dateObj = new Date(currentCalYear, currentCalMonth, i);
                     
-                    if (cls.schedule.includes(dateObj.getDay())) {
+                    const ex = appData.exceptions[`${cls.id}_${fullDate}`];
+                    const movedAway = ex && (ex.type === 'moved' || ex.type === 'cancel');
+                    const isExtra = ex && ex.type === 'extra';
+
+                    if ((cls.schedule.includes(dateObj.getDay()) && !movedAway) || isExtra) {
                         if (!scheduleMap[fullDate]) scheduleMap[fullDate] = [];
                         scheduleMap[fullDate].push(cls);
                     }
@@ -808,10 +842,32 @@
             let hasClasses = false;
 
             appData.classes.forEach(cls => {
-                const isScheduled = cls.schedule.includes(dayOfWeek);
+                const exKey = `${cls.id}_${selectedDate}`;
+                const ex = appData.exceptions[exKey];
+                const isScheduledBase = cls.schedule.includes(dayOfWeek);
+                const isExtra = ex && ex.type === 'extra';
+                const isMovedAway = ex && (ex.type === 'moved' || ex.type === 'cancel');
+                const isScheduled = (isScheduledBase && !isMovedAway) || isExtra;
                 const isAttended = appData.attendance[cls.id].includes(selectedDate);
                 const colors = colorClasses[cls.color] || colorClasses['blue'];
-                
+
+                // Buổi gốc đã bị dời/hủy: hiện thẻ xám thông báo, không điểm danh
+                if (isScheduledBase && isMovedAway && !isAttended) {
+                    hasClasses = true;
+                    const note = ex.type === 'moved'
+                        ? `Đã dời sang ${formatDateVN(ex.to)}`
+                        : 'Đã hủy buổi này';
+                    panel.innerHTML += `
+                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border border-gray-200 bg-gray-50">
+                            <div class="flex flex-col">
+                                <span class="font-medium text-gray-400 line-through">${cls.name}</span>
+                                <span class="text-xs text-gray-500 mt-1"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i>${note}</span>
+                            </div>
+                            <button onclick="undoException('${cls.id}','${selectedDate}')" class="text-xs text-blue-600 hover:underline shrink-0">Hoàn tác</button>
+                        </div>`;
+                    return;
+                }
+
                 // Show classes scheduled for this day OR classes that were already attended on this day (make-up classes)
                 if (isScheduled || isAttended) {
                     hasClasses = true;
@@ -827,16 +883,25 @@
                     const boxBorderClass = isAttended ? `${colors.lightBg} ${colors.border}` : 'bg-white border-gray-200 shadow-sm hover:border-gray-300';
                     const iconColorClass = isAttended ? `${colors.bg} border-transparent text-white` : 'bg-gray-100 border-gray-300 text-transparent';
 
+                    const extraTag = isExtra
+                        ? `<span class="text-[10px] bg-blue-100 text-blue-700 px-1.5 rounded w-max mt-1 border border-blue-200">Dời từ ${formatDateVN(ex.from)}</span>`
+                        : (!isScheduledBase && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1 border border-yellow-200 shadow-sm">Buổi học bù</span>' : '');
+
                     panel.innerHTML += `
-                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${boxBorderClass} transition-all cursor-pointer" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
-                            <div class="flex flex-col">
+                        <div class="flex items-center justify-between p-4 mb-3 rounded-xl border ${boxBorderClass} transition-all">
+                            <div class="flex flex-col cursor-pointer flex-1" onclick="toggleAttendance('${cls.id}', '${selectedDate}')">
                                 <span class="font-semibold ${isAttended ? colors.text : 'text-gray-800'}">${cls.name}${timeTag}</span>
                                 <span class="text-xs text-gray-500 mt-1">${formatMoney(cls.fee)} / buổi</span>
-                                ${!isScheduled && isAttended ? '<span class="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded w-max mt-1 border border-yellow-200 shadow-sm">Buổi học bù</span>' : ''}
+                                ${extraTag}
                             </div>
-                            
-                            <div class="w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${iconColorClass}">
-                                <i class="fa-solid fa-check"></i>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button onclick="event.stopPropagation(); openQuickMenu('${cls.id}','${selectedDate}')" title="Đổi lịch" class="w-8 h-8 rounded-full border-2 border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 flex items-center justify-center transition-colors">
+                                    <i class="fa-solid fa-ellipsis"></i>
+                                </button>
+                                <div onclick="toggleAttendance('${cls.id}', '${selectedDate}')" class="w-8 h-8 rounded-full border-2 flex items-center justify-center cursor-pointer transition-colors ${iconColorClass}">
+                                    <i class="fa-solid fa-check"></i>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -865,6 +930,81 @@
             saveData();
             renderAttendancePanel();
             renderCalendar(); // Refresh calendar dots
+        }
+
+        // --- 5b. ĐỔI LỊCH NHANH ---
+        let quickCtx = null; // { classId, date }
+
+        function shiftDate(dateStr, days) {
+            const d = new Date(dateStr + 'T00:00:00');
+            d.setDate(d.getDate() + days);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        function openQuickMenu(classId, dateStr) {
+            quickCtx = { classId, date: dateStr };
+            const cls = appData.classes.find(c => c.id === classId);
+            document.getElementById('quickMenuTitle').innerText = cls.name;
+            document.getElementById('quickMenuDate').innerText = formatDateVN(dateStr);
+            document.getElementById('quickMoveDateInput').value = shiftDate(dateStr, 7);
+            document.getElementById('quickMenuModal').classList.remove('hidden');
+        }
+
+        function closeQuickMenu() {
+            document.getElementById('quickMenuModal').classList.add('hidden');
+            quickCtx = null;
+        }
+
+        function applyMove(targetDate) {
+            const { classId, date } = quickCtx;
+            if (targetDate === date) { showToast("Ngày mới trùng ngày cũ"); return; }
+            appData.exceptions[`${classId}_${date}`] = { type: 'moved', to: targetDate };
+            appData.exceptions[`${classId}_${targetDate}`] = { type: 'extra', from: date };
+            // Giữ nguyên giờ học bằng cách copy custom time nếu có
+            const oldTimeKey = `${classId}_${date}`;
+            if (appData.customTimes[oldTimeKey]) {
+                appData.customTimes[`${classId}_${targetDate}`] = appData.customTimes[oldTimeKey];
+            }
+            saveData();
+            closeQuickMenu();
+            renderAttendancePanel();
+            renderCalendar();
+            showToast(`Đã dời sang ${formatDateVN(targetDate)}`);
+        }
+
+        function quickMoveNextWeek() { applyMove(shiftDate(quickCtx.date, 7)); }
+        function quickMoveTomorrow() { applyMove(shiftDate(quickCtx.date, 1)); }
+
+        function quickMoveCustom() {
+            const val = document.getElementById('quickMoveDateInput').value;
+            if (!val) { showToast("Vui lòng chọn ngày"); return; }
+            applyMove(val);
+        }
+
+        function quickCancel() {
+            const { classId, date } = quickCtx;
+            appData.exceptions[`${classId}_${date}`] = { type: 'cancel' };
+            // Nếu lỡ điểm danh rồi thì bỏ điểm danh
+            const idx = appData.attendance[classId].indexOf(date);
+            if (idx > -1) appData.attendance[classId].splice(idx, 1);
+            saveData();
+            closeQuickMenu();
+            renderAttendancePanel();
+            renderCalendar();
+            showToast("Đã hủy buổi học");
+        }
+
+        function undoException(classId, dateStr) {
+            const ex = appData.exceptions[`${classId}_${dateStr}`];
+            if (ex && ex.type === 'moved' && ex.to) {
+                delete appData.exceptions[`${classId}_${ex.to}`];
+                delete appData.customTimes[`${classId}_${ex.to}`];
+            }
+            delete appData.exceptions[`${classId}_${dateStr}`];
+            saveData();
+            renderAttendancePanel();
+            renderCalendar();
+            showToast("Đã hoàn tác");
         }
 
         function openMakeupModal() {
@@ -1046,6 +1186,49 @@
                 </div>
                 <p class="text-[11px] text-gray-400 italic mt-3 text-center">* Chỉ tính các buổi đã điểm danh. Buổi vắng không tính học phí.</p>
             `;
+        }
+
+        function buildReceiptText() {
+            const cls = appData.classes.find(c => c.id === receiptClassId);
+            const monthVal = document.getElementById('receiptMonthInput').value;
+            const [yy, mm] = monthVal.split('-');
+
+            const attended = (appData.attendance[cls.id] || [])
+                .filter(d => d.startsWith(monthVal)).sort();
+            const total = attended.length * cls.fee;
+
+            const dayList = attended.length
+                ? attended.map(d => `${formatDateVN(d)} (${dayNames[new Date(d).getDay()]})`).join(', ')
+                : 'chưa có buổi nào';
+
+            return `Em chào anh/chị ạ. Em xin phép gửi thông tin về học phí của lớp mình tháng ${Number(mm)}/${yy} vừa qua như sau:
+
+* Số buổi đã tham gia học: ${attended.length} buổi (${dayList})
+* Số tiền cần thanh toán: ${formatMoney(total)}
+
+Em cảm ơn anh/chị ạ!`;
+        }
+
+        function copyReceiptText() {
+            const text = buildReceiptText();
+            const done = () => showToast("Đã copy, dán vào Zalo là được!");
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+            } else {
+                fallbackCopy(text, done);
+            }
+        }
+
+        function fallbackCopy(text, done) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); done(); }
+            catch (e) { prompt("Copy đoạn text dưới đây:", text); }
+            document.body.removeChild(ta);
         }
 
         function openClassModal(classId = null) {
